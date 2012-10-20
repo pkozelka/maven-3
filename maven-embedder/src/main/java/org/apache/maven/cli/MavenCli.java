@@ -114,13 +114,13 @@ public class MavenCli
 
     // Per-instance container supports fast embedded execution of core ITs
     private DefaultPlexusContainer container;
-    
+
     private LoggerManager plexusLoggerManager;
 
     private ILoggerFactory slf4jLoggerFactory;
-    
+
     private Logger slf4jLogger;
-    
+
     private EventSpyDispatcher eventSpyDispatcher;
 
     private ModelProcessor modelProcessor;
@@ -132,6 +132,8 @@ public class MavenCli
     private SettingsBuilder settingsBuilder;
 
     private DefaultSecDispatcher dispatcher;
+
+    private ConfigurationHomeLocator configurationHomeLocator;
 
     public MavenCli()
     {
@@ -288,7 +290,7 @@ public class MavenCli
             System.out.println(CLIReportingUtils.showVersion());
             throw new ExitException( 0 );
         }
-    }    
+    }
 
     //
     // All logging is handled by SFL4J
@@ -302,12 +304,12 @@ public class MavenCli
         if ( cliRequest.debug )
         {
             cliRequest.request.setLoggingLevel( MavenExecutionRequest.LOGGING_LEVEL_DEBUG );
-            System.setProperty( "org.slf4j.simpleLogger.defaultLogLevel", "debug" );            
+            System.setProperty( "org.slf4j.simpleLogger.defaultLogLevel", "debug" );
         }
         else if ( cliRequest.quiet )
         {
             cliRequest.request.setLoggingLevel( MavenExecutionRequest.LOGGING_LEVEL_ERROR );
-            System.setProperty( "org.slf4j.simpleLogger.defaultLogLevel", "error" );            
+            System.setProperty( "org.slf4j.simpleLogger.defaultLogLevel", "error" );
         }
         else
         {
@@ -322,7 +324,7 @@ public class MavenCli
             System.setProperty("org.slf4j.simpleLogger.logFile", logFile.getAbsolutePath());
         }
 
-        plexusLoggerManager = new Slf4jLoggerManager();       
+        plexusLoggerManager = new Slf4jLoggerManager();
         slf4jLoggerFactory = LoggerFactory.getILoggerFactory();
         slf4jLogger = slf4jLoggerFactory.getLogger(this.getClass().getName());
     }
@@ -426,6 +428,8 @@ public class MavenCli
         settingsBuilder = container.lookup( SettingsBuilder.class );
 
         dispatcher = (DefaultSecDispatcher) container.lookup( SecDispatcher.class, "maven" );
+
+        configurationHomeLocator = new DefaultConfigurationHomeLocator();
 
         return container;
     }
@@ -673,7 +677,18 @@ public class MavenCli
         }
         else
         {
-            userSettingsFile = DEFAULT_USER_SETTINGS_FILE;
+            final File basedir;
+            final CommandLine commandLine = cliRequest.commandLine;
+            if ( commandLine.hasOption( CLIManager.ALTERNATE_POM_FILE ) )
+            {
+                final File alternatePomFile = new File( commandLine.getOptionValue( CLIManager.ALTERNATE_POM_FILE ) );
+                basedir = alternatePomFile.getParentFile().getAbsoluteFile();
+            }
+            else
+            {
+                basedir = new File( cliRequest.workingDirectory ).getAbsoluteFile();
+            }
+            userSettingsFile = new File( configurationHomeLocator.locate(basedir), "settings.xml" ) ;
         }
 
         File globalSettingsFile;
@@ -1057,7 +1072,7 @@ public class MavenCli
         }
 
         systemProperties.putAll( System.getProperties() );
-        
+
         // ----------------------------------------------------------------------
         // Properties containing info about the currently running version of Maven
         // These override any corresponding properties set on the command line
@@ -1150,12 +1165,12 @@ public class MavenCli
         logger.setThreshold( loggingLevel );
 
         return logger;
-    }        
-    
+    }
+
     //
     // Customizations available via the CLI
     //
-    
+
     protected void customizeContainer( PlexusContainer container )
     {
     }
@@ -1164,5 +1179,5 @@ public class MavenCli
         throws ComponentLookupException
     {
         return container.lookup( ModelProcessor.class );
-    }        
+    }
 }
