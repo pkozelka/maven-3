@@ -46,7 +46,7 @@ public final class CLIReportingUtils
     public static final int MS_PER_SEC = 1000;
 
     public static final int SEC_PER_MIN = 60;
-    
+
     public static final String BUILD_VERSION_PROPERTY = "version";
 
     public static String showVersion()
@@ -55,6 +55,7 @@ public final class CLIReportingUtils
         Properties properties = getBuildProperties();
         StringBuffer version = new StringBuffer();
         version.append( createMavenVersionString( properties ) ).append( LS );
+        version.append( " - patched version from http://github.com/pkozelka/maven-3" ).append( LS );
         version.append( reduce( properties.getProperty( "distributionShortName" ) + " home: " + System.getProperty( "maven.home", "<unknown maven home>" ) ) ).append( LS );
         version.append( "Java version: " + System.getProperty( "java.version", "<unknown java version>" ) + ", vendor: " + System.getProperty( "java.vendor", "<unknown vendor>" ) ).append( LS );
         version.append( "Java home: " + System.getProperty( "java.home", "<unknown java home>" ) ).append( LS );
@@ -65,7 +66,7 @@ public final class CLIReportingUtils
 
     /**
      * Create a human readable string containing the Maven version, buildnumber, and time of build
-     * 
+     *
      * @param buildProperties The build properties
      * @return Readable build info
      */
